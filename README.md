@@ -1,4 +1,244 @@
+import random
 
+def coin_flip():
+    flip = random.choice(["Heads", "Tails"])
+    return flip
+
+def main():
+    print("Welcome to the Coin Flip Simulator!")
+    while True:
+        num_flips = input("How many times would you like to flip the coin? (or 'q' to quit): ")
+        if num_flips.lower() == 'q':
+            break
+        try:
+            num_flips = int(num_flips)
+            for i in range(num_flips):
+                result = coin_flip()
+                print(f"Flip {i+1}: {result}")
+        except ValueError:
+            print("Invalid input. Please enter a number or 'q' to quit.")
+
+if __name__ == "__main__":
+    main()*/
+
+import React, { useEffect, useMemo, useState } from "react";
+import { motion, useAnimation } from "framer-motion";
+
+export default function KalCoinDAO() {
+  // --- Mock user/token state ---
+  const [account, setAccount] = useState(null);
+  // Mock token balances (in KAL tokens)
+  const [balances, setBalances] = useState({});
+
+  // --- Mock DAO proposals ---
+  const [proposals, setProposals] = useState(() => [
+    {
+      id: 1,
+      title: "Increase marketing budget",
+      description: "Allocate 5% of treasury to marketing campaigns.",
+      forVotes: 3,
+      againstVotes: 1,
+      executed: false,
+      createdBy: "0xMockAdmin",
+    },
+  ]);
+
+  const [nextProposalId, setNextProposalId] = useState(2);
+  const [newProposal, setNewProposal] = useState({ title: "", description: "" });
+
+  // --- Animation controls ---
+  const controls = useAnimation();
+
+  useEffect(() => {
+    // Start a looping left-to-right coin animation
+    controls.start({ x: [0, 220, -120, 0], rotate: [0, 360, 180, 0], transition: { duration: 8, repeat: Infinity, ease: "linear" } });
+  }, [controls]);
+
+  // --- Mock connect wallet ---
+  function connectMockWallet() {
+    // In production, replace this with wallet connect logic (e.g., MetaMask / WalletConnect)
+    const mock = "0xDEADBEEF1234";
+    setAccount(mock);
+    // Give some mock KAL tokens to the user if not present
+    setBalances((b) => ({ ...b, [mock]: (b[mock] || 100).toFixed ? (b[mock] || 100) : 100 }));
+  }
+
+  // --- DAO functions (mock) ---
+  function createProposal(e) {
+    e.preventDefault();
+    if (!newProposal.title) return alert("Please add a title");
+    const p = {
+      id: nextProposalId,
+      title: newProposal.title,
+      description: newProposal.description,
+      forVotes: 0,
+      againstVotes: 0,
+      executed: false,
+      createdBy: account || "0xGuest",
+    };
+    setProposals((ps) => [p, ...ps]);
+    setNextProposalId((n) => n + 1);
+    setNewProposal({ title: "", description: "" });
+  }
+
+  function vote(proposalId, support) {
+    if (!account) return alert("Connect wallet to vote (or use mock wallet)");
+    setProposals((ps) =>
+      ps.map((p) => {
+        if (p.id !== proposalId) return p;
+        const weight = Math.max(1, Math.floor((balances[account] || 0) / 10)); // mock voting weight
+        return support ? { ...p, forVotes: p.forVotes + weight } : { ...p, againstVotes: p.againstVotes + weight };
+      })
+    );
+  }
+
+  function executeProposal(proposalId) {
+    setProposals((ps) =>
+      ps.map((p) => {
+        if (p.id !== proposalId) return p;
+        const passed = p.forVotes > p.againstVotes;
+        return { ...p, executed: passed ? true : false };
+      })
+    );
+  }
+
+  // --- Utility / derived values ---
+  const totalSupply = useMemo(() => {
+    return Object.values(balances).reduce((s, v) => s + Number(v || 0), 0) || 1000;
+  }, [balances]);
+
+  // --- UI ---
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-gray-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        <header className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 relative">
+              {/* Animated coin */}
+              <motion.div
+                className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center bg-gradient-to-b from-yellow-300 to-amber-500 text-slate-900 font-bold"
+                animate={controls}
+                style={{ position: "absolute" }}
+              >
+                KAL
+              </motion.div>
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-extrabold">Kal Coin DAO</h1>
+              <p className="text-sm text-slate-300">Community-driven DAO for Kal Coin • Twitter: <a href="https://x.com/OBALOLUWA" target="_blank" rel="noreferrer" className="underline font-medium">@OBALOLUWA</a></p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-slate-300 text-right mr-4">
+              <div>Total KAL supply</div>
+              <div className="font-bold text-lg">{totalSupply.toLocaleString()} KAL</div>
+            </div>
+
+            {account ? (
+              <div className="bg-slate-700 px-4 py-2 rounded-lg">
+                <div className="text-xs text-slate-300">Connected</div>
+                <div className="font-mono text-sm">{account}</div>
+                <div className="text-xs">Balance: {(balances[account] || 0).toString()} KAL</div>
+              </div>
+            ) : (
+              <button onClick={connectMockWallet} className="bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-semibold hover:opacity-90">Connect (mock)</button>
+            )}
+          </div>
+        </header>
+
+        <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left - DAO actions */}
+          <section className="md:col-span-2 bg-slate-800/60 rounded-2xl p-6 shadow-lg">
+            <h2 className="text-xl font-bold mb-3">Proposals</h2>
+
+            <div className="space-y-4 mb-6">
+              {proposals.map((p) => (
+                <div key={p.id} className={`p-4 rounded-xl border ${p.executed ? "border-emerald-500 bg-emerald-900/10" : "border-slate-700"}`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold">#{p.id} — {p.title}</h3>
+                      <p className="text-sm text-slate-300">{p.description}</p>
+                      <div className="text-xs text-slate-400 mt-2">Created by: {p.createdBy}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm">For: <span className="font-bold">{p.forVotes}</span></div>
+                      <div className="text-sm">Against: <span className="font-bold">{p.againstVotes}</span></div>
+                      <div className="mt-2 flex gap-2">
+                        <button onClick={() => vote(p.id, true)} className="px-3 py-1 rounded-md bg-emerald-500 text-slate-900 text-sm">Vote ✅</button>
+                        <button onClick={() => vote(p.id, false)} className="px-3 py-1 rounded-md bg-rose-500 text-slate-900 text-sm">Vote ❌</button>
+                        <button onClick={() => executeProposal(p.id)} className="px-3 py-1 rounded-md bg-slate-700 text-sm">Execute</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 border-t border-slate-700 pt-4">
+              <h3 className="font-semibold mb-2">Create new proposal</h3>
+              <form onSubmit={createProposal} className="flex flex-col gap-2">
+                <input className="bg-slate-900/30 rounded-md p-2" placeholder="Title" value={newProposal.title} onChange={(e) => setNewProposal((s) => ({ ...s, title: e.target.value }))} />
+                <textarea className="bg-slate-900/30 rounded-md p-2" placeholder="Description" rows={3} value={newProposal.description} onChange={(e) => setNewProposal((s) => ({ ...s, description: e.target.value }))} />
+                <div className="flex gap-2">
+                  <button type="submit" className="bg-indigo-500 px-4 py-2 rounded-md font-semibold">Propose</button>
+                  <button type="button" onClick={() => setNewProposal({ title: "", description: "" })} className="px-4 py-2 rounded-md bg-slate-700">Clear</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          {/* Right - Treasury / Token distribution */}
+          <aside className="bg-slate-800/60 rounded-2xl p-6 shadow-lg">
+            <h2 className="text-lg font-bold mb-4">Treasury & Token</h2>
+
+            <div className="mb-4">
+              <div className="text-sm text-slate-300">Your mock wallet</div>
+              <div className="font-mono mt-1">{account || "Not connected"}</div>
+              <div className="text-sm mt-1">Balance: <span className="font-bold">{(account && balances[account]) || 0} KAL</span></div>
+            </div>
+
+            <div className="mb-4">
+              <div className="text-sm text-slate-300">Distribute mock tokens</div>
+              <div className="flex gap-2 mt-2">
+                <button onClick={() => {
+                  const addr = account || "0xGuest";
+                  setBalances((b) => ({ ...b, [addr]: (Number(b[addr] || 0) + 50) }));
+                }} className="px-3 py-2 rounded-md bg-amber-400 text-slate-900 font-semibold">Mint 50 KAL to me</button>
+
+                <button onClick={() => {
+                  const addr = "0xTreasury";
+                  setBalances((b) => ({ ...b, [addr]: (Number(b[addr] || 0) + 500) }));
+                }} className="px-3 py-2 rounded-md bg-slate-700">Fund Treasury</button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Holders</h3>
+              <div className="space-y-2 text-sm">
+                {Object.entries(balances).length === 0 ? (
+                  <div className="text-slate-400">No holders yet — mint some tokens.</div>
+                ) : (
+                  Object.entries(balances).map(([addr, bal]) => (
+                    <div key={addr} className="flex justify-between items-center">
+                      <div className="font-mono text-xs">{addr}</div>
+                      <div className="font-bold text-sm">{Number(bal).toLocaleString()} KAL</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </aside>
+        </main>
+
+        <footer className="mt-8 text-center text-sm text-slate-400">
+          Built with ❤️ for the Kal Coin community. Follow <a href="https://x.com/OBALOLUWA" target="_blank" rel="noreferrer" className="underline">@OBALOLUWA</a> on X.
+        </footer>
+      </div>
+    </div>
+  );
+}
 <!doctype html>
 <html lang="en-US">
 <head>
